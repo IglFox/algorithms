@@ -49,15 +49,12 @@ int isSorted(int arr[], int n) {
 }
 
 int main() {
-    #ifdef _WIN32
-        system("chcp 1251 > nul");
-    #endif
 
     srand(time(NULL));
 
-    int sizes[] = {900, 3000, 8500};
+    int sizes[] = {};
     int numSizes = 3;
-    const int NUM_REPEATS = 1000; // Число повторений для точности (как NN в методичке)
+    const int NUM_REPEATS = 10000; // Число повторений для точности (как NN в методичке)
 
     printf("===========================================================\n");
     printf("Лабораторная работа №1: Методы сортировки\n");
@@ -65,11 +62,11 @@ int main() {
     printf("===========================================================\n\n");
 
 
-    for (int idx = 0; idx < numSizes; idx++) {
-        int n = sizes[idx];
+    for (int i = 0; i < 2000; i++) {
+        int n = sizes[i];
 
-        int* original = (int*)malloc(n * sizeof(int));
-        int* work = (int*)malloc(n * sizeof(int));
+        int* original = (int*) malloc(n * sizeof(int));
+        int* work = (int*) malloc(n * sizeof(int));
 
         fillRandom(original, n);
 
