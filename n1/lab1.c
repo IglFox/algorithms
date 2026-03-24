@@ -1,7 +1,100 @@
+#define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <math.h>
+
+void bubbleSort(int arr[], int n);
+void mergeSort(int a[], int lb, int ub);
+void quickSort(int arr[], int low, int high);
+void fillRandom(int arr[], int n);
+void copyArray(int source[], int dest[], int n);
+void saveIntArrayToFile(int arr[], int size, const char *filename);
+void saveDoubleArrayToFile(double arr[], int size, const char *filename);
+
+// Лабораторная работа №1: Методы сортировки
+// Вариант 21: Шейкерная сортировка
+int main() {
+    #ifdef _WIN32
+        system("chcp 1251 > nul");
+    #endif
+
+    srand(time(NULL));
+
+    int sizes[] = {
+        100, 200, 300, 400, 500,
+        600, 700, 800, 900, 1000,
+        1100, 1200, 1300, 1400, 1500,
+        1600, 1700, 1800, 1900, 2000
+    };
+    int numSizes = sizeof(sizes) / sizeof(sizes[0]);
+    const int NUM_REPEATS = 10000;
+    double resultArray[3][numSizes];   // теперь double и индексация по idx
+
+    for (int idx = 0; idx < numSizes; idx++) {
+        int n = sizes[idx];
+        printf("Размер массива: %d 🏁\n", sizes[idx]);
+
+        int* original = (int*) malloc(n * sizeof(int));
+        int* work1 = (int*) malloc(n * sizeof(int));
+        int* work2 = (int*) malloc(n * sizeof(int));
+        int* work3 = (int*) malloc(n * sizeof(int));
+
+        if (!original || !work1 || !work2 || !work3) {
+            fprintf(stderr, "Ошибка выделения памяти\n");
+            exit(1);
+        }
+
+        fillRandom(original, n);
+        copyArray(original, work1, n);
+        copyArray(original, work2, n);
+        copyArray(original, work3, n);
+
+        double time_bubble = 0.0, time_merge = 0.0, time_quick = 0.0;
+
+        for (int repeat = 0; repeat < NUM_REPEATS; repeat++) {
+            copyArray(original, work1, n);
+            copyArray(original, work2, n);
+            copyArray(original, work3, n);
+
+            clock_t start, end;
+
+            // Bubble sort
+            start = clock();
+            bubbleSort(work1, n);
+            end = clock();
+            time_bubble += ((double)(end - start)) / CLOCKS_PER_SEC;
+
+            // Merge sort
+            start = clock();
+            mergeSort(work2, 0, n - 1);
+            end = clock();
+            time_merge += ((double)(end - start)) / CLOCKS_PER_SEC;
+
+            // Quick sort
+            start = clock();
+            quickSort(work3, 0, n - 1);
+            end = clock();
+            time_quick += ((double)(end - start)) / CLOCKS_PER_SEC;
+        }
+
+        resultArray[0][idx] = time_bubble / NUM_REPEATS;
+        resultArray[1][idx] = time_merge / NUM_REPEATS;
+        resultArray[2][idx] = time_quick / NUM_REPEATS;
+
+        free(original);
+        free(work1);
+        free(work2);
+        free(work3);
+    }
+
+    // Сохраняем результаты в файлы
+    saveIntArrayToFile(sizes, numSizes, "output/sizes.txt");
+    saveDoubleArrayToFile(resultArray[0], numSizes, "output/bubble_sort.txt");
+    saveDoubleArrayToFile(resultArray[1], numSizes, "output/merge_sort.txt");
+    saveDoubleArrayToFile(resultArray[2], numSizes, "output/quick_sort.txt");
+
+    return 0;
+}
 
 // Сортировка "Пузырьком"
 void bubbleSort(int arr[], int n) {
@@ -13,9 +106,10 @@ void bubbleSort(int arr[], int n) {
                 arr[j+1] = temp;
             }
         }
+    }
 }
 
-void merge(int a[], int lb, int split, int ub){
+void merge(int a[], int lb, int split, int ub) {
     int pos1 = lb;          // указатель на начало левой половины
     int pos2 = split + 1;   // указатель на начало правой половины
     int pos3 = 0;           // указатель во временном массиве
@@ -48,8 +142,9 @@ void merge(int a[], int lb, int split, int ub){
     free(temp);  // освобождаем память
 }
 
-// Сортировка слиянием
-void mergeSort(int a[], int lb, int ub){
+// Сортировка слиянием.
+// a - массив | lb - левая граница | ub - правая граница
+void mergeSort(int a[], int lb, int ub) {
     int split;
     if (lb < ub) {
         split = (lb + ub) / 2;          // находим середину
@@ -60,34 +155,38 @@ void mergeSort(int a[], int lb, int ub){
 }
 
 int partition(int arr[], int low, int high) {
-    int pivot = arr[high];
-    int i = (low - 1);
+    int pivot = arr[high];      // опорный элемент (берём последний)
+    int i = (low - 1);          // индекс для элементов меньше pivot
     int temp;
 
+    // Проходим по всем элементам, кроме опорного
     for (int j = low; j <= high - 1; j++) {
-        if (arr[j] < pivot) {
-            i++;
+        if (arr[j] < pivot) {   // если текущий элемент меньше опорного
+            i++;                // расширяем границу "меньших" элементов
+            // меняем местами arr[i] и arr[j]
             temp = arr[i];
             arr[i] = arr[j];
             arr[j] = temp;
         }
     }
+    // Ставим опорный элемент на правильное место (после всех меньших)
     temp = arr[i + 1];
     arr[i + 1] = arr[high];
     arr[high] = temp;
 
-    return (i + 1);
+    return (i + 1);             // возвращаем индекс опорного элемента
 }
 
 // Быстрая сортировка
 void quickSort(int arr[], int low, int high) {
     if (low < high) {
-        int pi = partition(arr, low, high);
-        quickSort(arr, low, pi - 1);
-        quickSort(arr, pi + 1, high);
+        int pi = partition(arr, low, high);  // делим массив
+        quickSort(arr, low, pi - 1);         // сортируем левую часть
+        quickSort(arr, pi + 1, high);        // сортируем правую часть
     }
 }
 
+// Заполняет массив arr, длинной n значениями rand() % 10000
 void fillRandom(int arr[], int n) {
     for (int i = 0; i < n; i++) {
         arr[i] = rand() % 10000;
@@ -100,76 +199,34 @@ void copyArray(int source[], int dest[], int n) {
     }
 }
 
-int isSorted(int arr[], int n) {
-    for (int i = 0; i < n - 1; i++) {
-        if (arr[i] > arr[i + 1]) return 0;
+// Сохранение целочисленного массива в файл
+void saveIntArrayToFile(int arr[], int size, const char *filename) {
+    FILE *file = fopen(filename, "w");
+    if (file == NULL) {
+        printf("Ошибка: не удалось создать файл %s\n", filename);
+        return;
     }
-    return 1;
+
+    for (int i = 0; i < size; i++) {
+        fprintf(file, "%d\n", arr[i]);
+    }
+
+    fclose(file);
+    printf("Массив сохранён в %s\n", filename);
 }
 
-
-// Лабораторная работа №1: Методы сортировки
-// Вариант 21: Шейкерная сортировка
-int main() {
-    #ifdef _WIN32
-        system("chcp 1251 > nul");
-    #endif
-
-    srand(time(NULL));
-
-    int sizes[] = {
-        100, 200, 300, 400, 500,
-        600, 700, 800, 900, 1000,
-        1100, 1200, 1300, 1400, 1500,
-        1600, 1700, 1800, 1900, 2000
-    };
-    int count = sizeof(sizes) / sizeof(sizes[0]);
-    const int NUM_REPEATS = 10000;
-
-    for (int idx = 0; idx < numSizes; idx++) {
-        int n = sizes[idx];
-
-        int* original = (int*)malloc(n * sizeof(int));
-        int* work = (int*)malloc(n * sizeof(int));
-
-        fillRandom(original, n);
-
-        clock_t t1, t2;
-        double copy_time = 0.0, sort_time = 0.0;
-
-        t1 = clock();
-        for (int repeat = 0; repeat < NUM_REPEATS; repeat++) {
-            copyArray(original, work, n);
-        }
-        t2 = clock();
-        copy_time = ((double)(t2 - t1)) / CLOCKS_PER_SEC;
-
-        // Замер времени сортировки (с учетом копирования)
-        t1 = clock();
-        for (int repeat = 0; repeat < NUM_REPEATS; repeat++) {
-            copyArray(original, work, n);
-            shakerSort(work, n);
-        }
-        t2 = clock();
-        sort_time = ((double)(t2 - t1)) / CLOCKS_PER_SEC;
-
-        // Вычитаем время копирования
-        double pure_sort_time = (sort_time - copy_time) / NUM_REPEATS;
-
-        // Проверка корректности последней сортировки
-        if (!isSorted(work, n)) {
-            printf("Ошибка сортировки!\n");
-        }
-
-        printf("Размер массива: %d\n", n);
-        printf("  Общее время %d сортировок: %.6f с\n", NUM_REPEATS, sort_time);
-        printf("  Время копирования: %.6f с\n", copy_time);
-        printf("  Чистое время одной сортировки: %.10f с\n", pure_sort_time);
-        printf("  Теоретическая O(n^2): ~%.6f с (относительно n=%d)\n\n",
-               pure_sort_time * pow(n/900.0, 2), n);
-
-        free(original);
-        free(work);
+// Сохранение вещественного массива в файл
+void saveDoubleArrayToFile(double arr[], int size, const char *filename) {
+    FILE *file = fopen(filename, "w");
+    if (file == NULL) {
+        printf("Ошибка: не удалось создать файл %s\n", filename);
+        return;
     }
 
-    return 0;
+    for (int i = 0; i < size; i++) {
+        fprintf(file, "%f\n", arr[i]);
+    }
+
+    fclose(file);
+    printf("Массив сохранён в %s\n", filename);
+}
