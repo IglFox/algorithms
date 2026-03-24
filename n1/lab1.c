@@ -3,46 +3,84 @@
 #include <time.h>
 #include <math.h>
 
-
-
-// best = O(n) | worst and in common = O(n^2)
-void sortBubble(int* arr, int n) {
+// Сортировка "Пузырьком"
+void bubbleSort(int arr[], int n) {
     for (int i = 0; i < n-1; i++) {
         for (int j = 0; j < n-i-1; j++) {
             if (arr[j] > arr[j+1]) {
                 int temp = arr[j];
                 arr[j] = arr[j+1];
                 arr[j+1] = temp;
-
             }
         }
+}
+
+void merge(int a[], int lb, int split, int ub){
+    int pos1 = lb;
+    int pos2 = split + 1;
+    int pos3 = 0;
+    int *temp = (int *) malloc((ub - lb + 1) * sizeof(int));
+    if (temp == NULL) {
+        fprintf(stderr, "Ошибка выделения памяти\n");
+        exit(1);
+    }
+
+    while (pos1 <= split && pos2 <= ub) {
+        if (a[pos1] < a[pos2])
+            temp[pos3++] = a[pos1++];
+        else
+            temp[pos3++] = a[pos2++];
+    }
+
+    while (pos2 <= ub)
+        temp[pos3++] = a[pos2++];
+
+    while (pos1 <= split)
+        temp[pos3++] = a[pos1++];
+
+    for (pos3 = 0; pos3 < ub - lb + 1; pos3++)
+        a[lb + pos3] = temp[pos3];
+
+    free(temp);
+}
+
+// Сортировка Слиянием
+void mergeSort(int a[], int lb, int ub){
+    int split;
+    if (lb < ub) {
+        split = (lb + ub) / 2;
+        mergeSort(a, lb, split);
+        mergeSort(a, split + 1, ub);
+        merge(a, lb, split, ub);
     }
 }
 
+int partition(int arr[], int low, int high) {
+    int pivot = arr[high];
+    int i = (low - 1);
+    int temp;
 
-void shakerSort(int arr[], int n) {
-    int left = 0;
-    int right = n - 1;
-    int i, temp;
-
-    while (left <= right) {
-        for (i = left; i < right; i++) {
-            if (arr[i] > arr[i + 1]) {
-                temp = arr[i];
-                arr[i] = arr[i + 1];
-                arr[i + 1] = temp;
-            }
+    for (int j = low; j <= high - 1; j++) {
+        if (arr[j] < pivot) {
+            i++;
+            temp = arr[i];
+            arr[i] = arr[j];
+            arr[j] = temp;
         }
-        right--;
+    }
+    temp = arr[i + 1];
+    arr[i + 1] = arr[high];
+    arr[high] = temp;
 
-        for (i = right; i > left; i--) {
-            if (arr[i - 1] > arr[i]) {
-                temp = arr[i - 1];
-                arr[i - 1] = arr[i];
-                arr[i] = temp;
-            }
-        }
-        left++;
+    return (i + 1);
+}
+
+// Быстрая сортировка
+void quickSort(int arr[], int low, int high) {
+    if (low < high) {
+        int pi = partition(arr, low, high);
+        quickSort(arr, low, pi - 1);
+        quickSort(arr, pi + 1, high);
     }
 }
 
@@ -65,25 +103,30 @@ int isSorted(int arr[], int n) {
     return 1;
 }
 
+
+// Лабораторная работа №1: Методы сортировки
+// Вариант 21: Шейкерная сортировка
 int main() {
+    #ifdef _WIN32
+        system("chcp 1251 > nul");
+    #endif
 
     srand(time(NULL));
 
-    int sizes[] = {};
-    int numSizes = 3;
-    const int NUM_REPEATS = 10000; // Число повторений для точности (как NN в методичке)
+    int sizes[] = {
+        100, 200, 300, 400, 500,
+        600, 700, 800, 900, 1000,
+        1100, 1200, 1300, 1400, 1500,
+        1600, 1700, 1800, 1900, 2000
+    };
+    int count = sizeof(sizes) / sizeof(sizes[0]);
+    const int NUM_REPEATS = 10000;
 
-    printf("===========================================================\n");
-    printf("Лабораторная работа №1: Методы сортировки\n");
-    printf("Вариант 21: Шейкерная сортировка\n");
-    printf("===========================================================\n\n");
+    for (int idx = 0; idx < numSizes; idx++) {
+        int n = sizes[idx];
 
-
-    for (int i = 0; i < 2000; i++) {
-        int n = sizes[i];
-
-        int* original = (int*) malloc(n * sizeof(int));
-        int* work = (int*) malloc(n * sizeof(int));
+        int* original = (int*)malloc(n * sizeof(int));
+        int* work = (int*)malloc(n * sizeof(int));
 
         fillRandom(original, n);
 
@@ -126,4 +169,3 @@ int main() {
     }
 
     return 0;
-}
