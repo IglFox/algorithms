@@ -55,4 +55,6 @@ dkms.conf
 *.dwo
 
 # Results
-# *.txt
+
+# Venv
+.venv*
